@@ -10,9 +10,11 @@ year: 2026
 type: software
 license: MIT
 repository-code: "https://github.com/FKudosC/mcp-registry-audit"
+doi: "10.5281/zenodo.23833260"
 abstract: >-
   Code and aggregate data for a cross-source audit of seven public Model Context
   Protocol registries: declaration-plane and code-plane readings of 100,688
   normalised repository listings, descriptor divergence, declaration coverage,
   single-registry listing concentration, and default-branch movement behind
   declared-frozen records.
+

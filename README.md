@@ -1,5 +1,6 @@
 ﻿# Cross-source consistency auditing of seven MCP registries
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23833260.svg)](https://doi.org/10.5281/zenodo.23833260)
 Code and aggregate data for the paper:
 
 > **What Model Context Protocol registry records establish: a cross-source audit of seven public registries**
@@ -44,6 +45,13 @@ playwright install chromium      # needed only for the JavaScript-rendered regis
 
 Full reproduction starts from a fresh crawl and therefore needs network access to the seven registries; the derived tables in `data/derived_tables/` reproduce every printed figure and statistic without re-crawling. The crawl is read-only: no repository code, install script or manifest hook is executed at any point, and no MCP server process is started.
 
+## Citation
+
+If you use this code or these tables, please cite the archived release:
+
+> Fan K, Peng J. Cross-source consistency auditing of seven MCP registries. Zenodo; 2026.
+> doi:10.5281/zenodo.23833260 (version V1.0.0; concept DOI 10.5281/zenodo.23833259)
+
 ## Licence
 
 Code and aggregate data: MIT (see `LICENSE`). The third-party content described above is not included and remains under its own terms.
@@ -51,5 +59,6 @@ Code and aggregate data: MIT (see `LICENSE`). The third-party content described 
 ## Contact
 
 Jialiang Peng — pengjialiang@hlju.edu.cn
+
 
 
