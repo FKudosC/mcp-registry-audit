@@ -1,0 +1,13 @@
+auto,gold,units
+different,Capability conflict,5
+different,Complementary,94
+different,Equivalent,118
+different,Identity conflict,7
+different,Subset,136
+near,Complementary,10
+near,Equivalent,50
+near,Subset,20
+partial,Capability conflict,8
+partial,Complementary,36
+partial,Equivalent,28
+partial,Subset,88

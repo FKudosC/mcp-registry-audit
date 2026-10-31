@@ -1,0 +1,6 @@
+﻿# Core runtime
+httpx>=0.27
+# JavaScript-rendered registries
+playwright>=1.44
+# Semantic-similarity sweep (Section 4.2 sensitivity analysis)
+sentence-transformers>=3.0

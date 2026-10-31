@@ -1,0 +1,10 @@
+category,declarable,units,mp_units,undeclared,share_pct
+Environment access,yes,12866,12480,8763,70.2
+Network egress,yes,12730,12366,8875,71.8
+Credential paths,yes,5457,5297,3845,72.6
+Unsafe deserialization,no,7457,7405,7405,100.0
+Subprocess spawn,no,6089,5939,5939,100.0
+Arbitrary code evaluation,no,5236,5121,5121,100.0
+Destructive filesystem write,no,5214,5123,5123,100.0
+Database access,no,2027,1947,1947,100.0
+Shell execution,no,316,295,295,100.0

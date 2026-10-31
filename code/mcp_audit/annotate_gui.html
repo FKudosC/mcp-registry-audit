@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>E2 标注控制台</title>
+<style>
+  :root{
+    --ink:#0b0d10; --ink2:#101318; --panel:#151920; --panel2:#1a1f27;
+    --line:#242b34; --line2:#333c47;
+    --txt:#e2e7ee; --dim:#8a95a3; --dim2:#5c6673;
+    --amber:#f0a92e; --teal:#48d1b0; --red:#ff5c52; --blue:#7aa2f7;
+    --font-d:"Bahnschrift","DIN Alternate","Franklin Gothic Medium","Microsoft YaHei UI","PingFang SC",sans-serif;
+    --font-m:"Cascadia Mono","JetBrains Mono","Consolas","Menlo",monospace;
+    --font-b:"Microsoft YaHei UI","PingFang SC","Noto Sans SC","Segoe UI",sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%}
+  body{
+    background:
+      radial-gradient(1200px 600px at 78% -10%, rgba(240,169,46,.07), transparent 60%),
+      radial-gradient(900px 500px at 5% 110%, rgba(72,209,176,.06), transparent 60%),
+      repeating-linear-gradient(0deg, rgba(255,255,255,.017) 0 1px, transparent 1px 34px),
+      repeating-linear-gradient(90deg, rgba(255,255,255,.017) 0 1px, transparent 1px 34px),
+      var(--ink);
+    color:var(--txt); font-family:var(--font-b); font-size:13.5px; line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .rack{display:grid; grid-template-columns:56px 1fr; min-height:100vh}
+
+  /* ---------- left rail ---------- */
+  .rail{
+    border-right:1px solid var(--line); background:linear-gradient(180deg,var(--ink2),var(--ink));
+    display:flex; flex-direction:column; align-items:center; gap:18px; padding:20px 0;
+    position:sticky; top:0; height:100vh;
+  }
+  .rail .brand{
+    writing-mode:vertical-rl; text-orientation:mixed; letter-spacing:.42em;
+    font-family:var(--font-d); font-size:11px; color:var(--dim); text-transform:uppercase;
+  }
+  .rail .pulse{width:9px;height:9px;border-radius:50%;background:var(--teal);
+    box-shadow:0 0 0 0 rgba(72,209,176,.5); animation:pulse 2.6s infinite}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(72,209,176,.45)}70%{box-shadow:0 0 0 12px rgba(72,209,176,0)}100%{box-shadow:0 0 0 0 rgba(72,209,176,0)}}
+  .rail .vtag{font-family:var(--font-m); font-size:10px; color:var(--dim2); writing-mode:vertical-rl; letter-spacing:.2em}
+
+  main{padding:22px 26px 60px; max-width:1560px; width:100%}
+
+  /* ---------- masthead ---------- */
+  .mast{display:flex; align-items:flex-end; justify-content:space-between; gap:24px;
+    border-bottom:1px solid var(--line); padding-bottom:14px; margin-bottom:20px; flex-wrap:wrap}
+  .mast h1{font-family:var(--font-d); font-weight:600; font-size:29px; letter-spacing:.02em; margin:0;
+    text-transform:uppercase; line-height:1.05}
+  .mast h1 em{font-style:normal; color:var(--amber)}
+  .mast .sub{font-family:var(--font-m); font-size:11.5px; color:var(--dim); margin-top:6px; letter-spacing:.03em}
+  .mast .sub b{color:var(--txt); font-weight:500}
+  .stats{display:flex; gap:22px; flex-wrap:wrap}
+  .stat .k{font-family:var(--font-m); font-size:10px; letter-spacing:.16em; color:var(--dim2); text-transform:uppercase}
+  .stat .v{font-family:var(--font-d); font-size:22px; letter-spacing:.01em; font-variant-numeric:tabular-nums}
+  .stat .v small{font-size:11px; color:var(--dim)}
+
+  /* ---------- generic panel ---------- */
+  .panel{border:1px solid var(--line); background:linear-gradient(180deg,var(--panel),var(--panel2));
+    border-radius:3px; position:relative}
+  .panel::before{content:""; position:absolute; inset:0 0 auto 0; height:1px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.08),transparent)}
+  .panel-head{display:flex; align-items:center; justify-content:space-between; gap:12px;
+    padding:11px 14px; border-bottom:1px solid var(--line)}
+  .panel-head h2{font-family:var(--font-d); font-size:12px; letter-spacing:.2em; text-transform:uppercase;
+    margin:0; color:var(--dim)}
+  .panel-body{padding:14px}
+
+  /* ---------- channels ---------- */
+  .channels{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:16px; margin-bottom:16px}
+  @media (max-width:1120px){.channels{grid-template-columns:1fr}}
+
+  .ch{border:1px solid var(--line); border-radius:3px; background:linear-gradient(180deg,var(--panel),var(--panel2));
+    display:flex; flex-direction:column; overflow:hidden; position:relative;
+    animation:rise .5s cubic-bezier(.2,.7,.2,1) both}
+  .ch:nth-child(1){animation-delay:.04s} .ch:nth-child(2){animation-delay:.12s} .ch:nth-child(3){animation-delay:.2s}
+  @keyframes rise{from{opacity:0; transform:translateY(10px)}to{opacity:1; transform:none}}
+  .ch[data-ok="1"]{border-color:rgba(72,209,176,.4)}
+  .ch[data-ok="0"][data-tried="1"]{border-color:rgba(255,92,82,.4)}
+
+  .ch-head{display:flex; align-items:center; gap:10px; padding:10px 13px; border-bottom:1px solid var(--line)}
+  .ch-no{font-family:var(--font-m); font-size:10px; color:var(--dim2); letter-spacing:.1em}
+  .ch-name{font-family:var(--font-d); font-size:15px; letter-spacing:.06em; text-transform:uppercase; flex:1}
+  .ch-run{display:flex; align-items:center; gap:5px; font-size:11px; color:var(--dim); cursor:pointer;
+    font-family:var(--font-m)}
+  .ch-run input{accent-color:var(--amber)}
+  .lamp{width:9px;height:9px;border-radius:50%;background:var(--dim2); flex:none; transition:.3s}
+  .ch[data-ok="1"] .lamp{background:var(--teal); box-shadow:0 0 9px rgba(72,209,176,.85)}
+  .ch[data-ok="0"][data-tried="1"] .lamp{background:var(--red); box-shadow:0 0 9px rgba(255,92,82,.8)}
+
+  .ch-body{padding:12px 13px; display:flex; flex-direction:column; gap:9px}
+  .fld{display:flex; flex-direction:column; gap:4px}
+  .fld-k{font-family:var(--font-m); font-size:9.5px; letter-spacing:.16em; text-transform:uppercase; color:var(--dim2)}
+  .fld input{background:var(--ink); border:1px solid var(--line2); color:var(--txt);
+    border-radius:2px; padding:7px 9px; font-family:var(--font-m); font-size:12px; outline:none; width:100%}
+  .fld input:focus{border-color:var(--amber); box-shadow:0 0 0 2px rgba(240,169,46,.12)}
+  .keywrap{position:relative; display:block}
+  .keywrap input{padding-right:52px}
+  .eye{position:absolute; right:3px; top:50%; transform:translateY(-50%); background:none; border:none;
+    color:var(--dim); font-family:var(--font-m); font-size:10.5px; cursor:pointer; padding:5px 7px}
+  .eye:hover{color:var(--amber)}
+
+  .ch-foot{display:flex; align-items:center; gap:10px; padding:10px 13px; border-top:1px solid var(--line);
+    margin-top:auto}
+  .verdict{font-family:var(--font-m); font-size:11px; color:var(--dim); flex:1; text-align:right}
+  .verdict[data-s="ok"]{color:var(--teal)} .verdict[data-s="no"]{color:var(--red)}
+  .probe{margin:0 13px 12px; border:1px dashed var(--line2); border-radius:2px; padding:8px 10px;
+    font-family:var(--font-m); font-size:10.5px; color:var(--dim); white-space:pre-wrap; word-break:break-all;
+    max-height:120px; overflow:auto}
+  .probe[data-s="ok"]{border-color:rgba(72,209,176,.4)} .probe[data-s="no"]{border-color:rgba(255,92,82,.4)}
+  .chipline{display:flex; gap:6px; flex-wrap:wrap; margin-bottom:5px}
+  .chip{font-family:var(--font-m); font-size:10px; border:1px solid var(--line2); border-radius:2px;
+    padding:1px 6px; color:var(--dim)}
+  .chip.ok{color:var(--teal); border-color:rgba(72,209,176,.4)}
+  .chip.no{color:var(--red); border-color:rgba(255,92,82,.4)}
+
+  /* ---------- buttons ---------- */
+  .btn{font-family:var(--font-d); letter-spacing:.1em; text-transform:uppercase; font-size:12px;
+    padding:9px 16px; border-radius:2px; cursor:pointer; border:1px solid var(--line2);
+    background:var(--panel2); color:var(--txt); transition:.16s}
+  .btn:hover:not(:disabled){border-color:var(--dim); transform:translateY(-1px)}
+  .btn:disabled{opacity:.4; cursor:not-allowed}
+  .btn-verify{padding:7px 14px; font-size:11px; border-color:rgba(240,169,46,.45); color:var(--amber)}
+  .btn-verify:hover:not(:disabled){background:rgba(240,169,46,.1)}
+  .btn-run{background:var(--amber); color:#1a1204; border-color:var(--amber); font-weight:600}
+  .btn-run:hover:not(:disabled){background:#ffbb4d; box-shadow:0 6px 20px rgba(240,169,46,.25)}
+  .btn-cancel{border-color:rgba(255,92,82,.5); color:var(--red)}
+  .btn-cancel:hover:not(:disabled){background:rgba(255,92,82,.1)}
+  .btn-ghost{color:var(--dim)}
+
+  /* ---------- deck ---------- */
+  .deck{display:grid; grid-template-columns:340px 1fr; gap:16px; align-items:start}
+  @media (max-width:1120px){.deck{grid-template-columns:1fr}}
+
+  .gate .panel-body{display:flex; flex-direction:column; gap:13px}
+  .gate-state{font-family:var(--font-m); font-size:11.5px; border-left:2px solid var(--line2); padding:7px 0 7px 10px; color:var(--dim)}
+  .gate-state[data-s="ok"]{border-color:var(--teal); color:var(--teal)}
+  .gate-state[data-s="no"]{border-color:var(--red); color:var(--red)}
+  .opts{display:grid; grid-template-columns:1fr 1fr; gap:9px}
+  .opt{display:flex; flex-direction:column; gap:3px}
+  .opt span{font-family:var(--font-m); font-size:9.5px; letter-spacing:.14em; text-transform:uppercase; color:var(--dim2)}
+  .opt input{background:var(--ink); border:1px solid var(--line2); color:var(--txt); border-radius:2px;
+    padding:6px 8px; font-family:var(--font-m); font-size:12px; outline:none; width:100%}
+  .opt input:focus{border-color:var(--amber)}
+  .opt-full{grid-column:1/-1; flex-direction:row; align-items:center; gap:7px; font-size:11.5px; color:var(--dim)}
+  .opt-full input{width:auto; accent-color:var(--amber)}
+  .acts{display:flex; gap:8px; flex-wrap:wrap}
+  .hint{font-size:11.5px; color:var(--dim2); min-height:16px}
+  .hint[data-s="no"]{color:var(--red)} .hint[data-s="ok"]{color:var(--teal)}
+
+  /* ---------- run / bars / terminal ---------- */
+  .bars{display:flex; flex-direction:column; gap:9px; padding:13px 14px; border-bottom:1px solid var(--line)}
+  .bar{display:grid; grid-template-columns:96px 1fr 132px; gap:11px; align-items:center}
+  .bar .bn{font-family:var(--font-d); font-size:12px; letter-spacing:.06em; text-transform:uppercase; color:var(--dim)}
+  .bar .track{height:6px; background:var(--ink); border:1px solid var(--line); border-radius:1px; overflow:hidden; position:relative}
+  .bar .fill{height:100%; width:0; background:linear-gradient(90deg,rgba(240,169,46,.5),var(--amber)); transition:width .35s}
+  .bar .meta{font-family:var(--font-m); font-size:10.5px; color:var(--dim2); text-align:right; font-variant-numeric:tabular-nums}
+  .bar .meta i{color:var(--red); font-style:normal} .bar .meta b{color:var(--teal); font-weight:400}
+
+  .term{font-family:var(--font-m); font-size:11.5px; line-height:1.7; padding:11px 14px; height:280px;
+    overflow:auto; background:repeating-linear-gradient(180deg,rgba(255,255,255,.014) 0 1px,transparent 1px 22px)}
+  .term .ln{display:flex; gap:9px}
+  .term .t{color:var(--dim2); flex:none}
+  .term .ok{color:var(--teal)} .term .err{color:var(--red)} .term .info{color:var(--dim)}
+  .term .warn{color:var(--amber)}
+  .term:empty::after{content:"等待任务…"; color:var(--dim2)}
+
+  /* ---------- score ---------- */
+  .score{margin-top:16px}
+  .score-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; margin-bottom:16px}
+  .big{border:1px solid var(--line); border-radius:3px; padding:13px 15px; background:var(--ink2)}
+  .big .k{font-family:var(--font-m); font-size:10px; letter-spacing:.15em; text-transform:uppercase; color:var(--dim2)}
+  .big .v{font-family:var(--font-d); font-size:32px; line-height:1.15; font-variant-numeric:tabular-nums}
+  .big .d{font-family:var(--font-m); font-size:10.5px; color:var(--dim)}
+  .verdict-line{border:1px solid var(--line2); border-left:3px solid var(--amber); border-radius:2px;
+    padding:11px 14px; margin-bottom:16px; font-size:13px}
+  .verdict-line[data-s="ok"]{border-left-color:var(--teal)} .verdict-line[data-s="no"]{border-left-color:var(--red)}
+  table{width:100%; border-collapse:collapse; font-family:var(--font-m); font-size:11.5px; margin-bottom:18px}
+  caption{text-align:left; font-family:var(--font-d); font-size:11px; letter-spacing:.18em; text-transform:uppercase;
+    color:var(--dim); padding:0 0 8px}
+  th,td{border:1px solid var(--line); padding:6px 9px; text-align:right; font-variant-numeric:tabular-nums}
+  th{color:var(--dim2); font-weight:400; font-size:10px; letter-spacing:.08em; text-transform:uppercase}
+  td:first-child,th:first-child{text-align:left}
+  tbody tr:hover{background:rgba(255,255,255,.02)}
+  .neg{color:var(--red)} .pos{color:var(--teal)} .mut{color:var(--dim2)}
+  .empty{color:var(--dim2); font-family:var(--font-m); font-size:12px; padding:22px 0; text-align:center}
+</style>
+</head>
+<body>
+<div class="rack">
+  <aside class="rail">
+    <span class="pulse"></span>
+    <div class="brand">E2 · Annotation Console</div>
+    <div class="vtag">cross-source reliability</div>
+  </aside>
+
+  <main>
+    <header class="mast">
+      <div>
+        <h1>标注<em>控制台</em></h1>
+        <div class="sub">填 <b>端点 URL</b> + <b>模型名</b> → <b>验证</b> → 判定 &nbsp;·&nbsp; 目录 <b id="mDir">—</b></div>
+      </div>
+      <div class="stats" id="stats"></div>
+    </header>
+
+    <section class="channels" id="channels"></section>
+
+    <section class="deck">
+      <div class="panel gate">
+        <div class="panel-head"><h2>放行闸</h2><span class="lamp" id="gateLamp"></span></div>
+        <div class="panel-body">
+          <div class="gate-state" id="gateState" data-s="">未验证任何通道</div>
+          <div class="opts">
+            <label class="opt"><span>条数（0 = 全跑）</span><input id="optLimit" type="number" min="0" value="0"></label>
+            <label class="opt" title="第三方统一网关多有 RPM 限流；429 会自动退避重试，这里再留一点间隔更稳">
+              <span>停顿 秒/条（限流网关建议 ≥0.5）</span>
+              <input id="optSleep" type="number" min="0" step="0.1" value="0.6"></label>
+            <label class="opt"><span>超时 秒</span><input id="optTimeout" type="number" min="5" value="60"></label>
+            <label class="opt" title="同一模型重复判定 k 轮，逐条留档到 reps/runs.csv；第 2 轮起分支写 reps/r{k}/，与第 1 轮互不覆盖">
+              <span>重跑次数（每模型轮次）</span>
+              <input id="optReps" type="number" min="1" max="5" value="1"></label>
+            <label class="opt" title="每个模型内部并发标注的线程数（模型之间仍串行）。>1 提速，但实际请求速率≈线程数/停顿，限流网关要相应调大「停顿 秒/条」或调小线程数">
+              <span>线程数（每模型并发，1 = 串行）</span>
+              <input id="optWorkers" type="number" min="1" max="16" value="1"></label>
+            <label class="opt opt-full"><input id="optForce" type="checkbox"> 忽略缓存重标（会覆盖已标 LLM 卡）</label>
+          </div>
+          <div class="acts">
+            <button class="btn btn-run" id="btnRun" disabled>开始判定</button>
+            <button class="btn btn-cancel" id="btnCancel" disabled>中止</button>
+            <button class="btn btn-ghost" id="btnScore">算信度 / 效度</button>
+            <button class="btn btn-ghost" id="btnStab">算重跑稳定性</button>
+          </div>
+          <div class="hint" id="hint" data-s=""></div>
+        </div>
+      </div>
+
+      <div class="panel run">
+        <div class="panel-head"><h2>判定进度</h2><span class="hint" id="agg">待机</span></div>
+        <div class="bars" id="bars"></div>
+        <div class="term" id="term"></div>
+      </div>
+    </section>
+
+    <section class="panel score">
+      <div class="panel-head"><h2>信度 / 效度</h2><span class="hint" id="scoreMeta"></span></div>
+      <div class="panel-body" id="score"><div class="empty">点「算信度 / 效度」读取 label_*.csv 计算 κ / α</div></div>
+    </section>
+
+    <section class="panel score">
+      <div class="panel-head"><h2>重跑稳定性</h2><span class="hint" id="stabMeta"></span></div>
+      <div class="panel-body" id="stab"><div class="empty">点「算重跑稳定性」读取 reps/runs.csv 计算轮内自一致 / 跨轮 Fleiss κ / 平票</div></div>
+    </section>
+  </main>
+</div>
+
+<script>
+const $ = (s, r=document) => r.querySelector(s);
+const $$ = (s, r=document) => [...r.querySelectorAll(s)];
+
+const S = { names:[], types:{}, presets:{}, cfg:{}, verified:{}, running:false, workerMax:16 };
+
+/* ---------------- 工具 ---------------- */
+async function api(path, opt){
+  const r = await fetch(path, Object.assign({headers:{'Content-Type':'application/json'}}, opt));
+  const txt = await r.text();
+  let d; try{ d = JSON.parse(txt); }catch(e){ d = {error:txt.slice(0,300)}; }
+  return d;
+}
+const n3 = x => (x===null||x===undefined||Number.isNaN(x)) ? '—' : Number(x).toFixed(3);
+const pct = x => Math.round((x||0)*100);
+const esc = s => String(s==null?'':s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+
+function toast(msg, s){
+  const h = $('#hint'); h.textContent = msg; h.dataset.s = s || '';
+  if(msg) setTimeout(()=>{ if(h.textContent===msg){ h.textContent=''; h.dataset.s=''; } }, 6000);
+}
+
+/* ---------------- 通道卡片 ---------------- */
+function buildChannels(){
+  const box = $('#channels'); box.innerHTML = '';
+  S.names.forEach((name, i) => {
+    const el = document.createElement('article');
+    el.className = 'ch'; el.dataset.name = name; el.dataset.ok = ''; el.dataset.tried = '';
+    el.innerHTML = `
+      <div class="ch-head">
+        <span class="ch-no">${String(i+1).padStart(2,'0')}</span>
+        <span class="ch-name">${esc(name)}</span>
+        <label class="ch-run"><input type="checkbox" class="c-on" checked>跑</label>
+        <span class="lamp"></span>
+      </div>
+      <div class="ch-body">
+        <label class="fld"><span class="fld-k">端点 URL</span>
+          <input class="c-url" type="text" spellcheck="false" placeholder="https://…/v1/chat/completions"></label>
+        <label class="fld"><span class="fld-k">模型名</span>
+          <input class="c-model" type="text" spellcheck="false" placeholder="如 deepseek-chat"></label>
+        <label class="fld"><span class="fld-k">API Key（不落盘）</span>
+          <span class="keywrap"><input class="c-key" type="password" spellcheck="false" autocomplete="off" placeholder="sk-…">
+          <button class="eye" type="button">显示</button></span></label>
+      </div>
+      <div class="ch-foot">
+        <button class="btn btn-verify" type="button">验证</button>
+        <span class="verdict">未验证</span>
+      </div>
+      <div class="probe" hidden></div>`;
+    box.appendChild(el);
+
+    const cfg = (S.cfg && S.cfg[name]) || {};
+    const pre = S.presets[name] || {};
+    $('.c-url', el).value   = cfg.url   || pre.url   || '';
+    $('.c-model', el).value = cfg.model || pre.model || '';
+
+    $('.eye', el).onclick = e => {
+      const inp = $('.c-key', el);
+      const show = inp.type === 'password';
+      inp.type = show ? 'text' : 'password';
+      e.target.textContent = show ? '隐藏' : '显示';
+    };
+    ['c-url','c-model','c-key'].forEach(c => $('.'+c, el).addEventListener('input', () => dirty(el)));
+    $('.c-on', el).addEventListener('change', () => { dirty(el); renderGate(); });
+    $('.btn-verify', el).onclick = () => doVerify(el);
+    renderChannelState(el);
+  });
+}
+
+function chanCfg(el){
+  return { provider: el.dataset.name, url: $('.c-url', el).value.trim(),
+           model: $('.c-model', el).value.trim(), key: $('.c-key', el).value.trim() };
+}
+function dirty(el){ delete S.verified[el.dataset.name]; el.dataset.tried=''; renderChannelState(el); renderGate(); }
+
+function renderChannelState(el){
+  const name = el.dataset.name, v = S.verified[name];
+  const ok = !!(v && v.ok);
+  el.dataset.ok = ok ? '1' : '';
+  const vd = $('.verdict', el);
+  if(!v){ vd.textContent = '未验证'; vd.dataset.s = ''; }
+  else if(v.ok){ vd.textContent = '通过 · ' + (v.mode === '兼容模式（省略 temperature）' ? '兼容模式' : '标准载荷') + ' · ' + v.ms + 'ms'; vd.dataset.s='ok'; }
+  else { vd.textContent = '失败'; vd.dataset.s='no'; }
+}
+
+async function doVerify(el){
+  const c = chanCfg(el), btn = $('.btn-verify', el);
+  if(!c.url || !c.model){ toast(`${c.provider}：URL 和模型名都要填`, 'no'); return; }
+  if(!c.key){ toast(`${c.provider}：还没填 API Key`, 'no'); return; }
+  btn.disabled = true; const old = btn.textContent; btn.textContent = '验证中…';
+  $('.verdict', el).textContent = '探针请求中…'; $('.verdict', el).dataset.s = '';
+  try{
+    const d = await api('/api/verify', {method:'POST', body: JSON.stringify(Object.assign(
+      {timeout: Number($('#optTimeout').value)||60}, c))});
+    S.verified[c.provider] = d;
+    el.dataset.tried = '1';
+    const p = $('.probe', el); p.hidden = false; p.dataset.s = d.ok ? 'ok' : 'no';
+    p.innerHTML =
+      `<div class="chipline">
+         <span class="chip ${d.ok?'ok':'no'}">${d.ok?'验证通过':'验证失败'}</span>
+         <span class="chip">${esc(d.mode||'-')}</span>
+         <span class="chip">${d.ms} ms</span>
+         ${d.label?`<span class="chip ok">label=${esc(d.label)}</span>`:''}
+       </div>` +
+      (d.note ? `note：${esc(d.note)}\n` : '') +
+      (d.ok ? `端点：${esc(d.provider.url)}\n模型：${esc(d.provider.model)}`
+            : `原因：${esc(d.error||'未知')}`) +
+      (d.raw && !d.ok ? `\n原文：${esc(d.raw)}` : '');
+  }catch(e){
+    S.verified[c.provider] = {ok:false, error:String(e)};
+    el.dataset.tried = '1';
+  }finally{
+    btn.disabled = false; btn.textContent = old;
+    renderChannelState(el); renderGate();
+  }
+}
+
+/* ---------------- 放行闸 ---------------- */
+function checkedNames(){ return $$('.ch').filter(el => $('.c-on', el).checked).map(el => el.dataset.name); }
+function renderGate(){
+  const want = checkedNames();
+  const missing = want.filter(n => !(S.verified[n] && S.verified[n].ok));
+  const gs = $('#gateState'), gl = $('#gateLamp'), run = $('#btnRun');
+  const locked = S.running || missing.length > 0 || want.length === 0;
+  run.disabled = locked;
+  $('#btnCancel').disabled = !S.running;
+  gl.style.background = locked ? '' : 'var(--teal)';
+  gl.style.boxShadow = locked ? '' : '0 0 9px rgba(72,209,176,.85)';
+  if(S.running){ gs.dataset.s='ok'; gs.textContent = '判定进行中…'; }
+  else if(!want.length){ gs.dataset.s='no'; gs.textContent = '没有勾选任何通道'; }
+  else if(missing.length){ gs.dataset.s='no'; gs.textContent = `待验证：${missing.join(' / ')}（验证通过后才放行）`; }
+  else { gs.dataset.s='ok'; gs.textContent = `已放行：${want.join(' / ')}`; }
+}
+
+/* ---------------- 进度 ---------------- */
+function buildBars(){
+  const box = $('#bars'); box.innerHTML = '';
+  S.names.forEach(name => {
+    const el = document.createElement('div');
+    el.className = 'bar'; el.dataset.name = name;
+    el.innerHTML = `<span class="bn">${esc(name)}</span>
+      <span class="track"><span class="fill"></span></span>
+      <span class="meta">—</span>`;
+    box.appendChild(el);
+  });
+}
+function fmtEta(sec){
+  sec = Math.max(0, Math.round(Number(sec)||0));
+  if(sec >= 3600) return `${Math.floor(sec/3600)}h${String(Math.floor(sec%3600/60)).padStart(2,'0')}m`;
+  if(sec >= 60) return `${Math.floor(sec/60)}m${String(sec%60).padStart(2,'0')}s`;
+  return `${sec}s`;
+}
+function renderProgress(p){
+  const repsAll = Number(p.reps)||1;
+  const workersAll = Number(p.workers)||1;
+  const rate = Number(p.rate)||0, eta = Number(p.eta)||0;
+  $('#agg').textContent = p.running
+    ? `运行中 · ${p.items}/${p.total||'?'} · ${p.elapsed.toFixed(0)}s`
+      + (rate>0 ? ` · ${rate.toFixed(2)} 条/秒 · 剩 ${fmtEta(eta)}` : '')
+      + (repsAll>1 ? ` · 每模型 ${repsAll} 轮` : '')
+      + (workersAll>1 ? ` · 每模型 ${workersAll} 线程` : '') + (p.stop?' · 停止中':'')
+    : (p.result ? '已结束' : '待机');
+  S.names.forEach(name => {
+    const el = $(`.bar[data-name="${name}"]`); if(!el) return;
+    const m = (p.models||{})[name];
+    const tot = p.total || 0;
+    const done = m ? (m.filled + m.cached + m.errors) : 0;
+    const reps = (m && m.reps) || repsAll;
+    const rd = (m && m.rep_done) || 0;
+    const w = reps > 1
+      ? (tot ? Math.min(100, rd*100/tot) : (m ? 100 : 0))
+      : (tot ? Math.min(100, done*100/tot) : (m ? 100 : 0));
+    $('.fill', el).style.width = w + '%';
+    $('.meta', el).innerHTML = m
+      ? (reps > 1 ? `<b>r${m.rep||1}/${reps}</b> ${rd}/${tot||'-'} · ` : `${done}/${tot||'-'} · `)
+        + `<b>+${m.filled}</b> · 缓${m.cached} · <i>${m.errors}</i>`
+        + (m.workers > 1 ? ` · ${(m.workers_now||m.workers)}/${m.workers}线程` : '')
+        + (m.gap ? ` · <span style="color:var(--amber)">隔${Number(m.gap).toFixed(1)}s</span>` : '')
+        + (m.rate ? ` · ${Number(m.rate).toFixed(2)}条/秒` : '')
+        + (m.retries ? ` · <span style="color:var(--amber)">退${m.retries}</span>` : '')
+      : '—';
+  });
+  const t = $('#term');
+  t.innerHTML = (p.log||[]).map(l =>
+    `<div class="ln"><span class="t">${esc(l.t)}</span><span class="${esc(l.lv)}">${esc(l.s)}</span></div>`).join('');
+  t.scrollTop = t.scrollHeight;
+  $('#btnCancel').disabled = !p.running;
+}
+
+/* ---------------- 总览 ---------------- */
+async function refreshState(){
+  const st = await api('/api/state');
+  $('#mDir').textContent = st.dir || '—';
+  const box = $('#stats'); box.innerHTML = '';
+  const add = (k, v, small) => box.insertAdjacentHTML('beforeend',
+    `<div class="stat"><div class="k">${esc(k)}</div><div class="v">${v}${small?` <small>${esc(small)}</small>`:''}</div></div>`);
+  add('标注包条目', st.n_items || 0, st.sheet_exists ? 'sheet.csv' : '缺 sheet.csv');
+  const ann = st.annotators || {};
+  const inv = st.invalid || [];
+  if(inv.length){
+    box.insertAdjacentHTML('beforeend',
+      `<div class="stat"><div class="k">标签异常</div>
+       <div class="v" style="color:var(--amber)">${inv.length}<small> 行认不出</small></div></div>`);
+  }
+  Object.keys(ann).sort().forEach(n => {
+    const a = ann[n];
+    const tag = a.kind === 'LLM' ? '机' : (a.kind === '人' ? '人' : '?');
+    add(n, `${a.done}<small>/${st.n_items||0}</small>`, `${tag} · ${pct(a.done/(st.n_items||1))}%`);
+  });
+  if(!Object.keys(ann).length) add('已交卷', '0', '无 label_*.csv');
+  return st;
+}
+
+/* ---------------- 判定 / 中止 ---------------- */
+async function startRun(){
+  const names = checkedNames();
+  const providers = {};
+  names.forEach(n => { const c = chanCfg($(`.ch[data-name="${n}"]`)); providers[n] = {url:c.url, model:c.model, key:c.key}; });
+  const sleepRaw = ($('#optSleep').value || '').trim();
+  const reps = Math.max(1, Math.min(5, Number($('#optReps').value)||1));
+  const workers = Math.max(1, Math.min(S.workerMax||16, Number($('#optWorkers').value)||1));
+  const body = { models: names, providers,
+    limit: Number($('#optLimit').value)||0,
+    sleep: sleepRaw === '' ? null : Number(sleepRaw),
+    timeout: Number($('#optTimeout').value)||60, reps, workers,
+    force: $('#optForce').checked };
+  const d = await api('/api/run', {method:'POST', body: JSON.stringify(body)});
+  if(!d.ok){ toast(d.error || '开跑失败', 'no'); return; }
+  S.running = true; renderGate();
+  const bits = [];
+  if(reps > 1) bits.push(`每模型 ${reps} 轮，逐轮留档 reps/runs.csv`);
+  if(workers > 1) bits.push(`每模型 ${workers} 线程`);
+  toast(bits.length ? `已开跑：${bits.join('｜')}` : '已开跑，进度见右侧', 'ok');
+}
+async function cancelRun(){ await api('/api/cancel', {method:'POST', body:'{}'}); toast('已请求中止，当前条跑完即停', ''); }
+
+/* ---------------- 信度 ---------------- */
+async function runScore(){
+  $('#scoreMeta').textContent = '计算中…';
+  const d = await api('/api/score', {method:'POST', body:'{}'});
+  if(d.error){ $('#scoreMeta').textContent=''; $('#score').innerHTML = `<div class="empty">${esc(d.error)}</div>`; return; }
+  renderScore(d);
+}
+function groupMean(groups, key){
+  const arr = (groups||{})[key]||[];
+  return arr.length ? arr.reduce((a,p)=>a+(p[2]||0),0)/arr.length : null;
+}
+function renderScore(d){
+  const L = d.label_zh || {}, labels = d.labels || [];
+  const a = d.alpha || [], f = d.fleiss || [];
+  const mm = groupMean(d.groups,'人–人'), mh = groupMean(d.groups,'人–机'), hh = groupMean(d.groups,'机–机');
+  const cov = d.coverage || {};
+  const names = Object.keys(cov);
+
+  $('#scoreMeta').textContent = `基准=${d.base||'—'} · 覆盖 ${names.length} 名标注者`;
+
+  const big = (k,v,dd)=>`<div class="big"><div class="k">${esc(k)}</div><div class="v">${v}</div><div class="d">${esc(dd)}</div></div>`;
+  let head = `<div class="score-grid">
+    ${big('Krippendorff α', n3(a[0]), `n=${d.alpha_n||0} 单元 · 容忍缺失`)}
+    ${big('Fleiss κ', n3(f[0]), `n=${d.fleiss_n||0} 全票单元`)}
+    ${big('人–人 κ 均值', n3(mm), mm==null?'无配对':'金标层')}
+    ${big('人–机 κ 均值', n3(mh), mh==null?'无配对':'LLM 代理')}
+    ${big('机–机 κ 均值', n3(hh), hh==null?'无配对':'跨家族')}
+    ${big('已交卷', String(names.length), `基准样本 ${d.n_items||0}`)}
+  </div>`;
+
+  let vline = '';
+  if(mm!=null && mh!=null){
+    const gap = Math.abs(mm-mh);
+    const ok = gap <= 0.1;
+    vline = `<div class="verdict-line" data-s="${ok?'ok':'no'}">
+      <b>落差判据</b>：｜人–人 ${n3(mm)} − 人–机 ${n3(mh)}｜ = <b>${n3(gap)}</b> ${ok?'≤ 0.1 ⇒ <b>LLM 代理有效</b>':'&gt; 0.1 ⇒ 代理存疑，需人工复核'}</div>`;
+  }
+
+  let pairs = `<table><caption>两两 Cohen κ</caption><thead><tr>
+    <th>标注者 A</th><th>标注者 B</th><th>κ</th><th>Po</th><th>Pe</th><th>n</th></tr></thead><tbody>` +
+    (d.pairs||[]).map(p=>`<tr><td>${esc(p[0])}</td><td>${esc(p[1])}</td>
+      <td class="${p[2]<0?'neg':'pos'}">${n3(p[2])}</td><td>${n3(p[3])}</td><td>${n3(p[4])}</td><td>${p[5]}</td></tr>`).join('') +
+    `</tbody></table>`;
+
+  const cbv = d.conf_by_verdict || {};
+  const rows = Object.keys(cbv).sort();
+  let valid = `<table><caption>效度：E1 自动档 × 人工标签（基准 ${esc(d.base||'')}）</caption>
+    <thead><tr><th>E1 自动档</th>${labels.map(l=>`<th>${esc(L[l]||l)}</th>`).join('')}<th>n</th></tr></thead><tbody>` +
+    rows.map(v=>{
+      const c = cbv[v] || {}; const tot = Object.values(c).reduce((x,y)=>x+y,0);
+      const benign = (d.benign||[]).reduce((x,l)=>x+(c[l]||0),0);
+      return `<tr><td>${esc(v)}</td>${labels.map(l=>`<td>${c[l]||0}</td>`).join('')}
+        <td class="mut">${tot} <span class="mut">(良${pct(benign/(tot||1))}%)</span></td></tr>`;
+    }).join('') + `</tbody></table>`;
+
+  const strata = d.strata || {}; const sk = Object.keys(strata).sort();
+  let strat = `<table><caption>分层有害率（different × 长度受限 是否只是长度被迫）</caption>
+    <thead><tr><th>层</th>${labels.map(l=>`<th>${esc(L[l]||l)}</th>`).join('')}<th>有害率</th></tr></thead><tbody>` +
+    sk.map(k=>{
+      const c = strata[k]; const tot = Object.values(c).reduce((x,y)=>x+y,0);
+      const harm = tot - (d.benign||[]).reduce((x,l)=>x+(c[l]||0),0);
+      return `<tr><td>${esc(k)}</td>${labels.map(l=>`<td>${c[l]||0}</td>`).join('')}
+        <td>${pct(harm/(tot||1))}%</td></tr>`;
+    }).join('') + `</tbody></table>`;
+
+  const bd = d.base_dist || {};
+  let dist = `<table><caption>基准标注分布</caption><thead><tr><th>类别</th><th>计数</th><th>占比</th></tr></thead><tbody>` +
+    labels.map(l=>{ const tot = Object.values(bd).reduce((x,y)=>x+y,0);
+      return `<tr><td>${esc(L[l]||l)} <span class="mut">${esc(l)}</span></td><td>${bd[l]||0}</td>
+        <td>${pct((bd[l]||0)/(tot||1))}%</td></tr>`; }).join('') + `</tbody></table>`;
+
+  let covT = '';
+  if(Object.keys(cov).length){
+    covT = `<table><caption>交卷覆盖</caption><thead><tr><th>标注者</th><th>已填</th><th>覆盖率</th></tr></thead><tbody>` +
+      names.sort().map(n=>`<tr><td>${esc(n)}</td><td>${cov[n]}</td>
+        <td>${pct(cov[n]/(d.n_items||1))}%</td></tr>`).join('') + `</tbody></table>`;
+  }
+
+  const inv = d.invalid || [];
+  let invT = '';
+  if(inv.length){
+    invT = `<table><caption style="color:var(--amber)">标签认不出来的行（已按缺失处理，改正后重跑）</caption>
+      <thead><tr><th>标注卡</th><th>标注者</th><th>条目</th><th>原值</th></tr></thead><tbody>` +
+      inv.slice(0,50).map(x=>`<tr><td>${esc(x.file)}</td><td>${esc(x.annotator||'')}</td>
+        <td>${esc(x.item_id)}</td><td class="mut">${esc(x.raw)}</td></tr>`).join('') +
+      `</tbody></table>`;
+  }
+
+  $('#score').innerHTML = invT + head + vline + pairs + valid + strat + dist + covT +
+    (d.disagreements ? `<div class="hint" data-s="ok">分歧清单已写：${esc(d.disagreements)}</div>`
+                     : `<div class="hint">无分歧条目（或标注者不足 2 名）</div>`);
+}
+
+/* ---------------- 重跑稳定性 ---------------- */
+async function runStability(){
+  $('#stabMeta').textContent = '计算中…';
+  const d = await api('/api/stability', {method:'POST', body:'{}'});
+  if(d.error){ $('#stabMeta').textContent=''; $('#stab').innerHTML = `<div class="empty">${esc(d.error)}</div>`; return; }
+  renderStability(d);
+}
+function renderStability(d){
+  const models = d.models || {};
+  const names = Object.keys(models).sort();
+  if(!names.length){
+    $('#stabMeta').textContent='';
+    $('#stab').innerHTML = `<div class="empty">${esc(d.note || '还没有重复轮次数据：用「重跑次数」> 1 先跑一遍')}</div>`;
+    return;
+  }
+  $('#stabMeta').textContent = `逐轮留档 ${d.runs||'—'} · 基准=${d.base||'—'} · 至多 ${d.reps||0} 轮`
+    + (d.csv ? ` · 已写 ${d.csv}` : '');
+
+  let tbl = `<table><caption>同模型跨轮一致性（每模型对自身重复判定）</caption>
+    <thead><tr><th>模型</th><th>轮次</th><th>共同条目</th><th>全轮一致</th><th>自一致率</th>
+      <th>两两一致</th><th>Fleiss κ</th><th>平票</th><th>vs ${esc(d.base||'人标')} κ</th></tr></thead><tbody>` +
+    names.map(n => {
+      const m = models[n];
+      if((m.reps||0) < 2){
+        return `<tr><td>${esc(n)}</td><td>${m.reps||0}</td><td colspan="7" class="mut">${esc(m.note||'轮次不足 2，无法算自一致')}</td></tr>`;
+      }
+      return `<tr><td>${esc(n)}</td>
+        <td>${m.reps} <span class="mut">(${(m.reps_list||[]).join(',')})</span></td>
+        <td>${m.n_items||0}</td>
+        <td>${m.unanimous||0}</td>
+        <td class="${(m.unanimous_rate||0)>=0.8?'pos':'neg'}">${n3(m.unanimous_rate)}</td>
+        <td>${n3(m.pairwise)}</td>
+        <td class="${(m.fleiss||0)<0?'neg':'pos'}">${n3(m.fleiss)}</td>
+        <td class="${(m.tie||0)>0?'neg':'mut'}">${m.tie||0} <span class="mut">${pct(m.tie_rate||0)}%</span></td>
+        <td>${m.human_items ? `${n3(m.human_kappa)} <span class="mut">n=${m.human_items}</span>` : '<span class="mut">—</span>'}</td></tr>`;
+    }).join('') + `</tbody></table>`;
+
+  let tieT = '';
+  const tied = names.filter(n => (models[n].tie||0) > 0);
+  if(tied.length){
+    tieT = `<table><caption style="color:var(--amber)">平票：三轮无多数票（判定不可复现，最该人工复核）</caption>
+      <thead><tr><th>模型</th><th>平票条目</th><th>占共判</th><th>多数票分布</th></tr></thead><tbody>` +
+      tied.map(n => {
+        const m = models[n];
+        const dist = m.maj_dist || {};
+        const ds = Object.keys(dist).sort().map(k=>`${esc(k)}:${dist[k]}`).join(' · ');
+        return `<tr><td>${esc(n)}</td><td>${m.tie}</td><td class="neg">${pct(m.tie_rate||0)}%</td><td class="mut">${esc(ds)}</td></tr>`;
+      }).join('') + `</tbody></table>`;
+  }
+
+  const inv = d.invalid || [];
+  let invT = '';
+  if(inv.length){
+    invT = `<table><caption style="color:var(--amber)">标签认不出来的行</caption>
+      <thead><tr><th>标注卡</th><th>标注者</th><th>条目</th><th>原值</th></tr></thead><tbody>` +
+      inv.slice(0,50).map(x=>`<tr><td>${esc(x.file)}</td><td>${esc(x.annotator||'')}</td>
+        <td>${esc(x.item_id)}</td><td class="mut">${esc(x.raw)}</td></tr>`).join('') + `</tbody></table>`;
+  }
+
+  $('#stab').innerHTML = invT + tbl + tieT +
+    `<div class="hint">自一致率 = 全轮同标签占比；Fleiss κ 为跨轮多评分者一致性；平票条目按多数票进入主卡 κ</div>`;
+}
+
+/* ---------------- 轮询 ---------------- */
+let pollTimer = null;
+async function poll(){
+  const p = await api('/api/progress');
+  const wasRunning = S.running;
+  S.running = !!p.running;
+  Object.keys(p.verified||{}).forEach(n => { if(!S.verified[n] || !S.verified[n].ok) S.verified[n] = p.verified[n]; });
+  S.names.forEach(n => renderChannelState($(`.ch[data-name="${n}"]`)));
+  renderProgress(p); renderGate();
+  if(wasRunning && !S.running){ await refreshState(); toast('判定任务已结束', 'ok'); }
+  const iv = S.running ? 900 : 2600;
+  clearTimeout(pollTimer); pollTimer = setTimeout(poll, iv);
+}
+
+/* ---------------- 启动 ---------------- */
+(async function init(){
+  const st = await refreshState();
+  const cfg = await api('/api/config');
+  S.names = st.llm_names || []; S.presets = cfg.presets || {}; S.cfg = cfg.providers || {};
+  buildChannels(); buildBars(); renderGate(); poll();
+  if(st.rep_max){
+    const el = $('#optReps'); el.max = st.rep_max;
+    el.value = Math.min(Math.max(1, Number(el.value)||1), st.rep_max);
+  }
+  if(st.worker_max){
+    S.workerMax = st.worker_max;
+    const el = $('#optWorkers'); el.max = st.worker_max;
+    if(st.worker_default){ el.value = st.worker_default; }
+    el.value = Math.min(Math.max(1, Number(el.value)||1), st.worker_max);
+  }
+  $('#btnRun').onclick = startRun;
+  $('#btnCancel').onclick = cancelRun;
+  $('#btnScore').onclick = runScore;
+  $('#btnStab').onclick = runStability;
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,3 @@
+setting,cross_units,comparable,different,rate_pct,desc_single_pct
+Zero-shot (2 unseen registries),619,617,609,98.7,0.32
+Baseline (7 registries),20203,5420,4418,81.51,73.16

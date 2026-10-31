@@ -1,0 +1,10 @@
+category,repos,pct
+Environment access,62597,71.96
+Network egress,55727,64.07
+Unsafe deserialization,32028,36.82
+Subprocess spawn,29262,33.64
+Arbitrary code eval,26524,30.49
+Credential paths,24922,28.65
+Destructive FS write,23923,27.5
+Database access,11019,12.67
+Shell execution,1547,1.78

@@ -1,0 +1,10 @@
+category,units
+network_egress,12495
+env_access,9149
+unsafe_deserialize,7457
+subprocess,6089
+arbitrary_code,5236
+fs_destructive,5214
+credential_paths,4005
+db_access,2027
+shell_true,316

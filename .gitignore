@@ -1,0 +1,13 @@
+﻿__pycache__/
+*.py[cod]
+.venv/
+.env
+*.db
+*.sqlite
+*.duckdb
+data/raw/
+data/clones/
+*.docx
+*.pdf
+.DS_Store
+Thumbs.db

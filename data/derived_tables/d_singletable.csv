@@ -1,0 +1,8 @@
+registry,covered,missed,miss_rate_pct
+glama,68676,8637,11.17
+official,11920,65393,84.58
+mcpso,11671,65642,84.9
+aibase,3845,73468,95.03
+cursor,1600,75713,97.93
+smithery,360,76953,99.53
+modelscope,184,77129,99.76

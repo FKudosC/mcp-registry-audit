@@ -1,0 +1,18 @@
+﻿cff-version: 1.2.0
+message: "If you use this code or these tables, please cite the article below."
+title: "Cross-source consistency auditing of seven MCP registries"
+authors:
+  - family-names: "Fan"
+    given-names: "Kecai"
+  - family-names: "Peng"
+    given-names: "Jialiang"
+year: 2026
+type: software
+license: MIT
+repository-code: "https://github.com/PLACEHOLDER/mcp-registry-audit"
+abstract: >-
+  Code and aggregate data for a cross-source audit of seven public Model Context
+  Protocol registries: declaration-plane and code-plane readings of 100,688
+  normalised repository listings, descriptor divergence, declaration coverage,
+  single-registry listing concentration, and default-branch movement behind
+  declared-frozen records.
