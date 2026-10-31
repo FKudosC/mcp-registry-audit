@@ -9,7 +9,7 @@ authors:
 year: 2026
 type: software
 license: MIT
-repository-code: "https://github.com/PLACEHOLDER/mcp-registry-audit"
+repository-code: "https://github.com/FKudosC/mcp-registry-audit"
 abstract: >-
   Code and aggregate data for a cross-source audit of seven public Model Context
   Protocol registries: declaration-plane and code-plane readings of 100,688

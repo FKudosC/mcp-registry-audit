@@ -5,6 +5,8 @@ Code and aggregate data for the paper:
 > **What Model Context Protocol registry records establish: a cross-source audit of seven public registries**
 > Kecai Fan, Jialiang Peng — Heilongjiang University, Harbin, China.
 > Submitted to *Computers & Security* (2026).
+>
+> Repository: https://github.com/FKudosC/mcp-registry-audit
 
 ## What this repository contains
 
@@ -49,4 +51,5 @@ Code and aggregate data: MIT (see `LICENSE`). The third-party content described 
 ## Contact
 
 Jialiang Peng — pengjialiang@hlju.edu.cn
+
 
