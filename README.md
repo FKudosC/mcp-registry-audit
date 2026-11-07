@@ -1,6 +1,6 @@
 ﻿# Assertion without establishment
 
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23833260.svg)](https://doi.org/10.5281/zenodo.23833260)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23833259.svg)](https://doi.org/10.5281/zenodo.23833259)
 
 Code and data for the paper:
 
@@ -69,7 +69,7 @@ The crawl is read-only. No repository code, install script or manifest hook is e
 If you use this code or these tables, please cite the archived release:
 
 > Fan K, Peng J. Assertion without establishment: a cross-source evidence audit of Model Context Protocol registry records. Zenodo; 2026.
-> doi:10.5281/zenodo.23833260 (version V1.0.0; concept DOI 10.5281/zenodo.23833259)
+> doi:10.5281/zenodo.24030540 (version v1.1.0; concept DOI 10.5281/zenodo.23833259, which always resolves to the latest version)
 
 ## Licence
 
