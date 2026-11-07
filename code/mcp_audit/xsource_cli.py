@@ -3,10 +3,11 @@
 把项目里三条跨源分析线封装成一个零依赖、可 ``pip install`` 的独立命令行工具：
 
 - :mod:`mcp_audit.xsource_fidelity`     概念 1+3 跨源保真度（同期横向分歧 / 可见性上界 V(f)）
-- :mod:`mcp_audit.consensus_analysis`   概念 4.4 危险面跨源共识（并产出注册表 source_blame 排名）
+- :mod:`mcp_audit.consensus_analysis`   概念 4.4 危险面跨源共识（并产出所列仓库画像 `listing_profile`）
 - :mod:`mcp_audit.consistency_analysis` C3 跨源声明–行为一致性（声明三角）
 
-输入 = **任意注册表导出的 JSON**；输出 = 跨源分歧报告 + source_blame 排名
+输入 = **任意注册表导出的 JSON**；输出 = 跨源分歧报告 + 所列仓库画像
+（`listing_profile`，非注册表排名）
 （text / Markdown / JSON / HTML）。
 
 两种运行模式
@@ -321,13 +322,17 @@ def export_source(conn, source: str) -> dict:
 
 # ----------------------------------------------------------------- 分析 --
 
-def analyze(conn, examples: int = 3, limit: int | None = None) -> dict:
+def analyze(conn, examples: int = 3, limit: int | None = None,
+            overgrant_rule: str = consensus_analysis.DEFAULT_OVERGANT_RULE,
+            sort: str = "name") -> dict:
     """复用三条跨源分析线（只读；不写 findings）。"""
     return {
         "fidelity": xsource_fidelity.run(conn, apply=False, examples=examples,
                                          limit=limit),
         "consensus": consensus_analysis.run(conn, apply=False, examples=examples,
-                                            limit=limit),
+                                            limit=limit,
+                                            overgrant_rule=overgrant_rule,
+                                            sort=sort),
         "consistency": consistency_analysis.run(conn, apply=False, examples=examples,
                                                 limit=limit),
     }
@@ -357,16 +362,8 @@ def render_text(result: dict, info: dict | None = None, mode: str = "baseline",
         for it in info["files"]:
             print(f"  · {it['source']:<12} {it['kept']}/{it['records']} 条可用  {it['path']}")
     print(f"跨源单元（≥2 源对齐）: {f['total']}")
-    print()
-    print("── source_blame 排名（注册表欠披露率，分母=有代码证据的跨源单元） ──")
-    print(f"  {db._pad('源', 14)} {db._pad('成员', 6, right=True)} "
-          f"{db._pad('有码', 6, right=True)} {db._pad('欠披露', 7, right=True)} "
-          f"{db._pad('欠披露率', 9, right=True)}")
-    for r in c["source_blame"]:
-        print(f"  {db._pad(r['source'], 14)} {db._pad(str(r['members']), 6, right=True)} "
-              f"{db._pad(str(r['members_code']), 6, right=True)} "
-              f"{db._pad(str(r['blamed']), 7, right=True)} "
-              f"{db._pad(_pct(r['rate']), 9, right=True)}")
+    print(f"超配口径: {c.get('overgrant_rule')}（定义 {c.get('definition_status')}）"
+          f"；画像表见第 3 节，按源名排序，不可读成名次")
     print()
 
     xsource_fidelity.show(result["fidelity"], examples, table=table)
@@ -434,11 +431,17 @@ def render_md(result: dict, info: dict | None = None, mode: str = "baseline") ->
     L.append(f"- 声明子集：{c['declaring_units']}")
     L.append("")
 
-    L.append("## 4. source_blame 排名（注册表欠披露率）")
+    L.append("## 4. 所列仓库画像（非注册表行为，不可用于排名）")
     L.append("")
-    rows = [[r["source"], r["members"], r["members_code"], r["blamed"],
-             _pct(r["rate"])] for r in c["source_blame"]]
-    L.append(_md_table(["源", "成员", "有码", "欠披露", "欠披露率"], rows))
+    L.append(f"口径 `{c.get('overgrant_rule')}` · 定义 `{c.get('definition_status')}`")
+    L.append("")
+    rows = [[r["source"], r["units_with_code"], r["units_overgrant"],
+             _pct(r["overgrant_rate"]), _pct(r["population_rate"]),
+             "—" if r["composition_delta_pp"] is None
+             else f"{r['composition_delta_pp']:+.1f}",
+             r["attributable_units"]] for r in c["listing_profile"]]
+    L.append(_md_table(["源", "有码", "超配", "超配率", "全体率", "构成效应(pp)",
+                        "可归因"], rows))
     L.append("")
     L.append(f"> 生成命令：`{TOOL} {' '.join(sys.argv[1:]) or '(baseline)'}`")
     return "\n".join(L)
@@ -464,7 +467,10 @@ def render_json(result: dict, info: dict | None = None, mode: str = "baseline") 
             "with_code": c["with_code"],
             "danger_units": c["danger_units"],
             "declaring_units": c["declaring_units"],
-            "source_blame": c["source_blame"],
+            "overgrant_rule": c["overgrant_rule"],
+            "definition_status": c["definition_status"],
+            "population_rate": c["population_rate"],
+            "listing_profile": c["listing_profile"],
         },
         "consistency": {
             "decl_total": k["decl_total"],
@@ -515,8 +521,11 @@ def render_html(result: dict, info: dict | None = None, mode: str = "baseline") 
     for key in xsource_fidelity.FIELD_ORDER:
         v = f["visibility"][key]
         vis.append([key, v["ge1"], v["ge2"], v["single"], _pct(v["single_ratio"])])
-    blame = [[r["source"], r["members"], r["members_code"], r["blamed"], _pct(r["rate"])]
-             for r in c["source_blame"]]
+    blame = [[r["source"], r["units_with_code"], r["units_overgrant"],
+              _pct(r["overgrant_rate"]), _pct(r["population_rate"]),
+              "—" if r["composition_delta_pp"] is None
+              else f"{r['composition_delta_pp']:+.1f}",
+              r["attributable_units"]] for r in c["listing_profile"]]
     src_line = ", ".join(info["sources"]) if info else "（本项目采集库）"
     return f"""<!doctype html>
 <html lang="zh"><head><meta charset="utf-8">
@@ -536,7 +545,8 @@ def render_html(result: dict, info: dict | None = None, mode: str = "baseline") 
 名级兑现率 {_pct(k["mean_coverage"])}</p></section>
 <section><h2>3. 危险面跨源共识（Consensus）</h2>
 <p>有代码画像 {c["with_code"]} · 含危险面 {c["danger_units"]} · 声明子集 {c["declaring_units"]}</p>
-{_html_table(["源", "成员", "有码", "欠披露", "欠披露率"], blame)}</section>
+<p>所列仓库画像（口径 {c["overgrant_rule"]} · 定义 {c["definition_status"]} · 不可用于排名）</p>
+{_html_table(["源", "有码", "超配", "超配率", "全体率", "构成效应(pp)", "可归因"], blame)}</section>
 <p class="foot">{TOOL} · 跨源一致性审计（只读 artifact）</p>
 </div></body></html>"""
 
@@ -569,7 +579,7 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         prog=TOOL,
         description="跨源一致性审计：输入任意注册表导出 JSON，输出跨源分歧报告 + "
-                    "source_blame 排名（只读，不执行第三方代码）")
+                    "所列仓库画像（只读，不执行第三方代码）")
     parser.add_argument("--input", action="append", default=[], metavar="SOURCE=PATH",
                         help="外部注册表导出 JSON（可重复；SOURCE 省略时从 JSON 推断）")
     parser.add_argument("--db", default=None, help="采集库路径（默认 config.DB_PATH）")
@@ -581,6 +591,13 @@ def main() -> None:
     parser.add_argument("--examples", type=int, default=3, help="样例条数（默认 3）")
     parser.add_argument("--limit", type=int, default=None, help="限制处理单元数（抽样）")
     parser.add_argument("--table", type=int, default=0, help="明细表行数（默认 0）")
+    parser.add_argument("--definition", choices=("all", "declarable", "table10"),
+                        default="declarable",
+                        help="超配口径：declarable（默认，论文 §4.3 构造）/ all（九类）"
+                             "/ table10（读已发布 Table 10 固定值，不重算）")
+    parser.add_argument("--sort", choices=("name", "rate"), default="name",
+                        help="画像表顺序：name（默认，不可被读成名次）/ "
+                             "rate（显式选择才按超配率降序）")
     parser.add_argument("--keep-db", action="store_true",
                         help="保留零适配模式生成的临时库（调试用）")
     args = parser.parse_args()
@@ -615,7 +632,8 @@ def main() -> None:
         info = None
         mode = "baseline"
 
-    result = analyze(conn, examples=args.examples, limit=args.limit)
+    result = analyze(conn, examples=args.examples, limit=args.limit,
+                     overgrant_rule=args.definition, sort=args.sort)
 
     if fmt == "text":
         render_text(result, info=info, mode=mode, examples=args.examples,

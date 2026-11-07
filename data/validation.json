@@ -1,0 +1,289 @@
+{
+  "n": 593,
+  "facts": [
+    {
+      "fact": "A1",
+      "n": 593,
+      "agree": 479,
+      "agree_rate": 0.8077571669477235,
+      "kappa": -0.0016743469306107603,
+      "human": {
+        "\u662f": 592,
+        "\u4e0d\u53ef\u89c1": 1
+      },
+      "machine": {
+        "\u662f": 480,
+        "\u5426": 113
+      }
+    },
+    {
+      "fact": "A2",
+      "n": 593,
+      "agree": 398,
+      "agree_rate": 0.6711635750421585,
+      "kappa": 0.1902821250761507,
+      "human": {
+        "\u662f": 365,
+        "\u5426": 196,
+        "\u65e0\u6cd5\u5224\u65ad": 32
+      },
+      "machine": {
+        "\u662f": 548,
+        "\u5426": 45
+      }
+    },
+    {
+      "fact": "A3",
+      "n": 593,
+      "agree": 580,
+      "agree_rate": 0.9780775716694773,
+      "kappa": 0.8620436649964213,
+      "human": {
+        "\u662f": 540,
+        "\u5426": 41,
+        "\u65e0\u6cd5\u5224\u65ad": 10,
+        "\u4e0d\u53ef\u89c1": 2
+      },
+      "machine": {
+        "\u662f": 544,
+        "\u5426": 49
+      }
+    },
+    {
+      "fact": "A6",
+      "n": 593,
+      "agree": 340,
+      "agree_rate": 0.5733558178752108,
+      "kappa": 0.08525595688120391,
+      "human": {
+        "\u662f": 459,
+        "\u4e0d\u53ef\u89c1": 119,
+        "\u5426": 14,
+        "\u65e0\u6cd5\u5224\u65ad": 1
+      },
+      "machine": {
+        "\u662f": 403,
+        "\u5426": 190
+      }
+    },
+    {
+      "fact": "A7",
+      "n": 593,
+      "agree": 530,
+      "agree_rate": 0.893760539629005,
+      "kappa": 0.7900884955752212,
+      "human": {
+        "\u662f": 313,
+        "\u5426": 278,
+        "\u65e0\u6cd5\u5224\u65ad": 2
+      },
+      "machine": {
+        "\u662f": 252,
+        "\u5426": 341
+      }
+    },
+    {
+      "fact": "A8",
+      "n": 593,
+      "agree": 371,
+      "agree_rate": 0.6256323777403036,
+      "kappa": 0.09404591499669689,
+      "human": {
+        "\u662f": 529,
+        "\u5426": 41,
+        "\u4e0d\u9002\u7528": 23
+      },
+      "machine": {
+        "\u662f": 373,
+        "\u5426": 220
+      }
+    }
+  ],
+  "sets": [
+    {
+      "fact": "A4",
+      "exact": 476,
+      "n": 593,
+      "exact_rate": 0.8026981450252951,
+      "mean_jaccard": 0.8344575604272065
+    },
+    {
+      "fact": "A5",
+      "exact": 214,
+      "n": 593,
+      "exact_rate": 0.3608768971332209,
+      "mean_jaccard": 0.6607504215851605
+    }
+  ],
+  "agree_verdict": 315,
+  "confusion": {
+    "PARTIAL": {
+      "SUPPORTED": 33,
+      "PARTIAL": 76,
+      "INSUFFICIENT": 9,
+      "UNSUPPORTED": 2
+    },
+    "UNRESOLVED": {
+      "PARTIAL": 4,
+      "UNSUPPORTED": 13,
+      "INSUFFICIENT": 94,
+      "SUPPORTED": 2
+    },
+    "UNSUPPORTED": {
+      "INSUFFICIENT": 46,
+      "UNSUPPORTED": 21,
+      "PARTIAL": 19,
+      "SUPPORTED": 34
+    },
+    "INSUFFICIENT": {
+      "UNSUPPORTED": 6,
+      "INSUFFICIENT": 111,
+      "PARTIAL": 2,
+      "SUPPORTED": 1
+    },
+    "SUPPORTED": {
+      "SUPPORTED": 107,
+      "INSUFFICIENT": 13
+    },
+    "CONFLICT": {},
+    "STALE": {}
+  },
+  "per_status": {
+    "SUPPORTED": {
+      "machine": 120,
+      "human": 177,
+      "agree": 107,
+      "precision": 0.8916666666666667,
+      "recall": 0.6045197740112994
+    },
+    "PARTIAL": {
+      "machine": 120,
+      "human": 101,
+      "agree": 76,
+      "precision": 0.6333333333333333,
+      "recall": 0.7524752475247525
+    },
+    "UNSUPPORTED": {
+      "machine": 120,
+      "human": 42,
+      "agree": 21,
+      "precision": 0.175,
+      "recall": 0.5
+    },
+    "CONFLICT": {
+      "machine": 0,
+      "human": 0,
+      "agree": 0,
+      "precision": null,
+      "recall": null
+    },
+    "STALE": {
+      "machine": 0,
+      "human": 0,
+      "agree": 0,
+      "precision": null,
+      "recall": null
+    },
+    "INSUFFICIENT": {
+      "machine": 120,
+      "human": 273,
+      "agree": 111,
+      "precision": 0.925,
+      "recall": 0.4065934065934066
+    },
+    "UNRESOLVED": {
+      "machine": 113,
+      "human": 0,
+      "agree": 0,
+      "precision": 0.0,
+      "recall": null
+    }
+  },
+  "classes": {
+    "arbitrary_code": {
+      "detected": 155,
+      "confirmed": 3,
+      "confirm_rate": 0.01935483870967742,
+      "not_detected": 438,
+      "added": 0,
+      "add_rate": 0.0
+    },
+    "credential_paths": {
+      "detected": 189,
+      "confirmed": 43,
+      "confirm_rate": 0.2275132275132275,
+      "not_detected": 404,
+      "added": 0,
+      "add_rate": 0.0
+    },
+    "db_access": {
+      "detected": 64,
+      "confirmed": 57,
+      "confirm_rate": 0.890625,
+      "not_detected": 529,
+      "added": 3,
+      "add_rate": 0.005671077504725898
+    },
+    "env_access": {
+      "detected": 435,
+      "confirmed": 406,
+      "confirm_rate": 0.9333333333333333,
+      "not_detected": 158,
+      "added": 0,
+      "add_rate": 0.0
+    },
+    "fs_destructive": {
+      "detected": 163,
+      "confirmed": 16,
+      "confirm_rate": 0.09815950920245399,
+      "not_detected": 430,
+      "added": 0,
+      "add_rate": 0.0
+    },
+    "network_egress": {
+      "detected": 342,
+      "confirmed": 320,
+      "confirm_rate": 0.935672514619883,
+      "not_detected": 251,
+      "added": 2,
+      "add_rate": 0.00796812749003984
+    },
+    "shell_exec": {
+      "detected": 0,
+      "confirmed": 0,
+      "confirm_rate": null,
+      "not_detected": 593,
+      "added": 3,
+      "add_rate": 0.00505902192242833
+    },
+    "subprocess": {
+      "detected": 195,
+      "confirmed": 116,
+      "confirm_rate": 0.5948717948717949,
+      "not_detected": 398,
+      "added": 2,
+      "add_rate": 0.005025125628140704
+    },
+    "unsafe_deserialize": {
+      "detected": 252,
+      "confirmed": 1,
+      "confirm_rate": 0.003968253968253968,
+      "not_detected": 341,
+      "added": 0,
+      "add_rate": 0.0
+    }
+  },
+  "by_mode": {
+    "blind": {
+      "n": 148,
+      "agree": 75,
+      "agree_rate": 0.5067567567567568
+    },
+    "verify": {
+      "n": 445,
+      "agree": 240,
+      "agree_rate": 0.5393258426966292
+    }
+  },
+  "n_flips": 278
+}

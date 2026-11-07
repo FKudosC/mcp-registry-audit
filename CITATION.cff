@@ -1,6 +1,6 @@
 ﻿cff-version: 1.2.0
 message: "If you use this code or these tables, please cite the article below."
-title: "Cross-source consistency auditing of seven MCP registries"
+title: "Assertion without establishment: a cross-source evidence audit (CSEA) of Model Context Protocol registry records"
 authors:
   - family-names: "Fan"
     given-names: "Kecai"
@@ -12,9 +12,10 @@ license: MIT
 repository-code: "https://github.com/FKudosC/mcp-registry-audit"
 doi: "10.5281/zenodo.23833260"
 abstract: >-
-  Code and aggregate data for a cross-source audit of seven public Model Context
+  Code and data for a cross-source evidence audit (CSEA) of seven public Model Context
   Protocol registries: declaration-plane and code-plane readings of 100,688
   normalised repository listings, descriptor divergence, declaration coverage,
   single-registry listing concentration, and default-branch movement behind
   declared-frozen records.
+
 

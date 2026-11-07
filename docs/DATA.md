@@ -30,3 +30,18 @@ Every file is derived from the crawl of 3 to 21 September 2026 and backs a numbe
 | `d_zeroshot.csv` | — | `setting, cross_units, comparable, different, rate_pct, desc_single_pct` |
 
 Percentages are printed to one decimal place in the paper; the tables carry the unrounded values used for them.
+
+## Files outside derived_tables
+
+| File | Contents |
+|---|---|
+| summary.json | Totals behind Tables 1 and 5 |
+| blation.json | The four ablation arms behind Tables S10 and S11 |
+| alidation.json | Agreement statistics behind Tables S13 and S14 |
+| invariants.json | Output of the four invariants, which must reproduce on any run |
+| d_kappa.csv | Pairwise kappa in the first annotation round, the source of Table S15 |
+| ig7_data.json | The two panels of Figure 7 |
+| c1_reclone_probe.json | Probe outcomes behind the drift census |
+
+Per-unit files, the corpus database and the annotation labels are in 
+estricted/ and are described in SCOPE.md.

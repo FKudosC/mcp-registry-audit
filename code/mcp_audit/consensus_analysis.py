@@ -51,9 +51,11 @@
     python -m mcp_audit consensus --apply         # 写库
 """
 
+import csv
 import json
 import sqlite3
 from collections import defaultdict
+from pathlib import Path
 
 from . import db
 from . import code_analysis
@@ -70,6 +72,20 @@ DANGER_CATEGORIES = (
 )
 assert set(DANGER_CATEGORIES) == set(code_analysis._DANGER_PATTERNS), (
     "危险面键名与 code_analysis 不一致（不得臆造）")
+
+# 可声明类：server.json 里真的有声明通道的三类（论文 §4.3）。
+DECLARABLE_CLASSES = ("env_access", "network_egress", "credential_paths")
+
+# over-grant 口径 -------------------------------------------------------------
+#   all        九类全算（历史口径；比论文口径宽，不能用于复现 Table 10）
+#   declarable 只算三类有声明通道的（论文 §4.3 的构造；可由本模块重算）
+#   table10    直接读已发布 Table 10 的固定值（pin，不重算；定义未恢复，
+#              见 paper/框架化_20261103/口径恢复报告.md）
+OVERGANT_RULES = ("all", "declarable", "table10")
+DEFAULT_OVERGANT_RULE = "declarable"
+PAPER_TABLE10_CSV = Path(__file__).resolve().parent / "data" / "paper_table10.csv"
+# Table 10 的全语料超配率：15,305 / 19,872（论文 §4.3）
+PAPER_TABLE10_POPULATION_RATE = 15305 / 19872
 
 # 判定档（优先级自上而下）
 VERDICT_ORDER = ("no_code", "no_decl", "dissensus_overgrant",
@@ -117,6 +133,31 @@ def _declared_caps(profile: dict | None) -> set[str]:
             out.add("network_egress")
             break
     return out
+
+
+def _overgrant_set(actual: set[str], declared: set[str], rule: str) -> list[str]:
+    """按口径算一个单元的超配类别集。table10 不重算，退化为 declarable。"""
+    classes = set(actual) if rule == "all" else set(actual) & set(DECLARABLE_CLASSES)
+    return sorted(classes - set(declared))
+
+
+def paper_table10_rows() -> list[dict]:
+    """已发表 Table 10 的固定值（pin）。
+
+    定义未恢复（见口径恢复报告）：本函数只读 ``data/paper_table10.csv``，
+    不重算、不推断。返回字段与 Table 10 一一对应。
+    """
+    rows: list[dict] = []
+    with PAPER_TABLE10_CSV.open(encoding="utf-8", newline="") as fh:
+        for r in csv.DictReader(fh):
+            rows.append({
+                "registry": r["registry"],
+                "with_code": int(r["with_code"]),
+                "numerator": int(r["numerator"]),
+                "unit_level": int(r["unit_level"]),
+                "cross_disagreement": int(r["cross_disagreement"]),
+            })
+    return rows
 
 
 def _decl_index(conn: sqlite3.Connection) -> dict[str, dict]:
@@ -174,8 +215,12 @@ def _decl_index(conn: sqlite3.Connection) -> dict[str, dict]:
     return out
 
 
-def collect(conn: sqlite3.Connection) -> dict:
-    """跨源货号 -> 危险面超配的共识/反共识判定（按 norm_url 分组）。"""
+def collect(conn: sqlite3.Connection,
+            overgrant_rule: str = DEFAULT_OVERGANT_RULE) -> dict:
+    """跨源货号 -> 危险面超配的共识/反共识判定（按 norm_url 分组）。
+
+    ``overgrant_rule`` 决定"超配"的类别范围（见文件头 OVERGANT_RULES）。
+    """
     cross: dict[str, list[str]] = {}
     for r in conn.execute(
         "SELECT norm_url, GROUP_CONCAT(DISTINCT source) AS sources FROM repo_index "
@@ -207,7 +252,7 @@ def collect(conn: sqlite3.Connection) -> dict:
 
         declaring = sorted(s for s in sources
                            if per_src.get(s, {}).get("tools_count", 0) > 0)
-        overgrant = sorted(actual - declared_collective)
+        overgrant = _overgrant_set(actual, declared_collective, overgrant_rule)
 
         # 反共识（概念 4.4）：各声明源声明能力集不一致，差异被代码证实
         blame: dict[str, list[str]] = {}
@@ -261,9 +306,14 @@ def collect(conn: sqlite3.Connection) -> dict:
 
 
 def run(conn: sqlite3.Connection, apply: bool = False, examples: int = 5,
-        limit: int | None = None) -> dict:
-    """逐货号判定。apply=False 只统计不写库；apply=True 幂等重建 findings。"""
-    data = collect(conn)
+        limit: int | None = None, overgrant_rule: str = DEFAULT_OVERGANT_RULE,
+        sort: str = "name") -> dict:
+    """逐货号判定。apply=False 只统计不写库；apply=True 幂等重建 findings。
+
+    ``sort`` 只影响所列画像表的顺序：``name``（默认，不可被读成名次）
+    或 ``rate``（显式选择才按率降序，报告里会打印口径警示）。
+    """
+    data = collect(conn, overgrant_rule=overgrant_rule)
     counts: dict[str, int] = defaultdict(int)
     decl_counts: dict[str, int] = defaultdict(int)
     overgrant_dist: dict[str, int] = defaultdict(int)
@@ -274,6 +324,7 @@ def run(conn: sqlite3.Connection, apply: bool = False, examples: int = 5,
     with_code = 0
     danger_units = 0
     declaring_units = 0
+    units_over = 0
     written = 0
 
     ts = db.now()
@@ -298,6 +349,8 @@ def run(conn: sqlite3.Connection, apply: bool = False, examples: int = 5,
             table.append(p)
         for cat in p["overgrant"]:
             overgrant_dist[cat] += 1
+        if p["has_code"] and p["overgrant"]:
+            units_over += 1
         for s in p["sources"]:
             members[s] += 1
             if p["has_code"]:
@@ -326,18 +379,8 @@ def run(conn: sqlite3.Connection, apply: bool = False, examples: int = 5,
         _TABLE_ORDER.index(p["verdict"]) if p["verdict"] in _TABLE_ORDER
         else len(_TABLE_ORDER), -len(p["overgrant"])))
 
-    blame_rows = []
-    for s in members:
-        mc = members_code.get(s, 0)
-        b = blamed.get(s, 0)
-        blame_rows.append({
-            "source": s,
-            "members": members[s],
-            "members_code": mc,
-            "blamed": b,
-            "rate": (b / mc) if mc else None,
-        })
-    blame_rows.sort(key=lambda r: (-(r["rate"] or 0.0), -r["blamed"], r["source"]))
+    profile = _build_listing_profile(
+        members, members_code, blamed, units_over, with_code, overgrant_rule)
 
     return {
         "total": len(data),
@@ -349,12 +392,79 @@ def run(conn: sqlite3.Connection, apply: bool = False, examples: int = 5,
         "decl_counts": dict(decl_counts),
         "overgrant_dist": dict(sorted(overgrant_dist.items(),
                                       key=lambda x: -x[1])),
-        "source_blame": blame_rows,
+        "overgrant_rule": overgrant_rule,
+        "definition_status": ("pinned_published_v1"
+                              if overgrant_rule == "table10"
+                              else "computed_from_corpus"),
+        "population_rate": (PAPER_TABLE10_POPULATION_RATE
+                            if overgrant_rule == "table10"
+                            else ((units_over / with_code) if with_code else None)),
+        "listing_profile": profile,
+        "sort": sort,
         "examples": dict(ex),
         "table": table,
         "written": written,
         "applied": apply,
     }
+
+
+def _build_listing_profile(members: dict[str, int], members_code: dict[str, int],
+                           blamed: dict[str, int], units_over: int,
+                           with_code: int, rule: str) -> list[dict]:
+    """每源"所列仓库画像"。不排序为名次，只给构成分解。
+
+    读法：``overgrant_rate`` 随"这个源列了哪些仓库"变化；
+    可归因成分恒为 0（声明集取自共享的制品 manifest）。
+    """
+    pop_rate = (PAPER_TABLE10_POPULATION_RATE if rule == "table10"
+                else ((units_over / with_code) if with_code else None))
+    rows: list[dict] = []
+    if rule == "table10":
+        for r in paper_table10_rows():
+            wc = r["with_code"]
+            num = r["numerator"]
+            rate = (num / wc) if wc else None
+            rows.append({
+                "source": r["registry"],
+                "units_listed": members.get(r["registry"]),
+                "units_with_code": wc,
+                "units_overgrant": num,
+                "overgrant_rate": rate,
+                "population_rate": pop_rate,
+                "composition_delta_pp": (None if rate is None
+                                         else (rate - pop_rate) * 100),
+                "attributable_units": r["cross_disagreement"],
+                "attributable_rate": ((r["cross_disagreement"] / wc) if wc else None),
+                "ranking_permitted": False,
+                "reading": "listing profile, not registry conduct",
+                "definition_status": "pinned_published_v1",
+                "reproducible_from_code": False,
+            })
+        rows.sort(key=lambda r: r["source"])
+        return rows
+
+    for s in members:
+        mc = members_code.get(s, 0)
+        b = blamed.get(s, 0)
+        rate = (b / mc) if mc else None
+        rows.append({
+            "source": s,
+            "units_listed": members[s],
+            "units_with_code": mc,
+            "units_overgrant": b,
+            "overgrant_rate": rate,
+            "population_rate": pop_rate,
+            "composition_delta_pp": (None if rate is None or pop_rate is None
+                                     else (rate - pop_rate) * 100),
+            "attributable_units": 0,
+            "attributable_rate": 0.0 if mc else None,
+            "ranking_permitted": False,
+            "reading": "listing profile, not registry conduct",
+            "definition_status": "computed_from_corpus",
+            "reproducible_from_code": True,
+        })
+    rows.sort(key=lambda r: r["source"])
+    return rows
 
 
 def _print_table(table: list[dict], limit: int) -> None:
@@ -402,12 +512,30 @@ def show(result: dict, examples: int, table: int = 0) -> None:
         if n:
             print(f"  {cat:<22} {n}")
     print()
-    print("source_blame（按注册表欠披露率排序；分母=该源所列且有代码证据的跨源单元）:")
-    print(f"  {'源':<14} {'成员':>6} {'有码':>6} {'欠披露':>6} {'欠披露率':>8}")
-    for r in result["source_blame"]:
-        rate = f"{r['rate'] * 100:.1f}%" if r["rate"] is not None else "—"
-        print(f"  {r['source']:<14} {r['members']:>6} {r['members_code']:>6} "
-              f"{r['blamed']:>6} {rate:>8}")
+    prof = list(result["listing_profile"])
+    if result.get("sort") == "rate":
+        prof.sort(key=lambda r: -(r["overgrant_rate"] or 0.0))
+        print("⚠ 已按超配率降序：该顺序不构成注册表排名——超配率随"
+              "\"这个源列了哪些仓库\"变化，可归因成分为 0。")
+    else:
+        prof.sort(key=lambda r: r["source"])
+
+    def _p(x):
+        return "—" if x is None else f"{x * 100:.1f}%"
+
+    print(f"所列仓库画像（口径 {result['overgrant_rule']} · 定义 "
+          f"{result['definition_status']} · 不可用于排名）:")
+    print(f"  {'源':<12} {'列出':>7} {'有码':>7} {'超配':>7} {'超配率':>7} "
+          f"{'全体率':>7} {'构成效应':>9} {'可归因':>7}")
+    for r in prof:
+        delta = ("—" if r["composition_delta_pp"] is None
+                 else f"{r['composition_delta_pp']:+.1f}pp")
+        print(f"  {r['source']:<12} {r['units_listed'] if r['units_listed'] is not None else '—':>7} "
+              f"{r['units_with_code']:>7} {r['units_overgrant']:>7} "
+              f"{_p(r['overgrant_rate']):>7} {_p(r['population_rate']):>7} "
+              f"{delta:>9} {r['attributable_units']:>7}")
+    print("  说明：声明集取自共享的制品 manifest，成员读到同一份，"
+          "故可归因成分实测为 0。")
 
     if examples:
         for verdict in ("dissensus_overgrant", "consensus_overgrant"):
@@ -446,11 +574,18 @@ def main() -> None:
                         help="打印样例数（默认 5，0 不打印）")
     parser.add_argument("--table", type=int, default=0,
                         help="打印危险面×声明对照表的行数（0 不打印）")
+    parser.add_argument("--overgrant-rule", choices=OVERGANT_RULES,
+                        default=DEFAULT_OVERGANT_RULE,
+                        help="超配口径：declarable（默认，论文 §4.3 构造）/ "
+                             "all（九类）/ table10（读已发布表，不重算）")
+    parser.add_argument("--sort", choices=("name", "rate"), default="name",
+                        help="画像表顺序：name（默认）/ rate（显式选择才按率排）")
     args = parser.parse_args()
 
     conn = db.connect()
     db.init_db(conn)
-    result = run(conn, apply=args.apply, examples=args.examples, limit=args.limit)
+    result = run(conn, apply=args.apply, examples=args.examples, limit=args.limit,
+                 overgrant_rule=args.overgrant_rule, sort=args.sort)
     show(result, args.examples, table=args.table)
     conn.close()
 

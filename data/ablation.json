@@ -1,0 +1,109 @@
+{
+  "n": 22104,
+  "dist": {
+    "full": {
+      "INSUFFICIENT": 12835,
+      "UNSUPPORTED": 5335,
+      "PARTIAL": 3198,
+      "SUPPORTED": 623,
+      "UNRESOLVED": 113
+    },
+    "channel_assumed": {
+      "INSUFFICIENT": 6842,
+      "UNSUPPORTED": 11328,
+      "PARTIAL": 3198,
+      "SUPPORTED": 623,
+      "UNRESOLVED": 113
+    },
+    "official_only": {
+      "INSUFFICIENT": 15702,
+      "PARTIAL": 4045,
+      "SUPPORTED": 2079,
+      "UNSUPPORTED": 165,
+      "UNRESOLVED": 113
+    },
+    "best_single": {
+      "INSUFFICIENT": 15595,
+      "PARTIAL": 4130,
+      "SUPPORTED": 2098,
+      "UNSUPPORTED": 168,
+      "UNRESOLVED": 113
+    }
+  },
+  "changed": {
+    "official_only": 5644,
+    "best_single": 5565,
+    "channel_assumed": 5993
+  },
+  "per_source": {
+    "glama": {
+      "n": 19577,
+      "dist": {
+        "INSUFFICIENT": 15699,
+        "PARTIAL": 3133,
+        "SUPPORTED": 613,
+        "UNSUPPORTED": 40,
+        "UNRESOLVED": 92
+      }
+    },
+    "official": {
+      "n": 13582,
+      "dist": {
+        "INSUFFICIENT": 7275,
+        "PARTIAL": 4045,
+        "SUPPORTED": 2079,
+        "UNSUPPORTED": 165,
+        "UNRESOLVED": 18
+      }
+    },
+    "mcpso": {
+      "n": 9969,
+      "dist": {
+        "INSUFFICIENT": 9039,
+        "PARTIAL": 720,
+        "UNRESOLVED": 91,
+        "SUPPORTED": 112,
+        "UNSUPPORTED": 7
+      }
+    },
+    "aibase": {
+      "n": 4235,
+      "dist": {
+        "INSUFFICIENT": 4119,
+        "PARTIAL": 58,
+        "UNRESOLVED": 45,
+        "SUPPORTED": 12,
+        "UNSUPPORTED": 1
+      }
+    },
+    "cursor": {
+      "n": 1791,
+      "dist": {
+        "INSUFFICIENT": 1580,
+        "PARTIAL": 124,
+        "UNRESOLVED": 63,
+        "SUPPORTED": 21,
+        "UNSUPPORTED": 3
+      }
+    },
+    "smithery": {
+      "n": 341,
+      "dist": {
+        "INSUFFICIENT": 174,
+        "SUPPORTED": 21,
+        "PARTIAL": 142,
+        "UNSUPPORTED": 2,
+        "UNRESOLVED": 2
+      }
+    },
+    "modelscope": {
+      "n": 189,
+      "dist": {
+        "INSUFFICIENT": 177,
+        "PARTIAL": 7,
+        "UNRESOLVED": 4,
+        "UNSUPPORTED": 1
+      }
+    }
+  }
+}

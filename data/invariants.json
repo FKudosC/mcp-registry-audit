@@ -1,0 +1,24 @@
+{
+  "I4": {
+    "ok": true,
+    "verdicts": 56357,
+    "evidence": 54077,
+    "dangling": 0,
+    "uncited": 0
+  },
+  "I1": {
+    "ok": true,
+    "violations": 0,
+    "sample": []
+  },
+  "I2": {
+    "ok": true,
+    "violations": 0,
+    "by_reason": {}
+  },
+  "I3": {
+    "ok": true,
+    "n": 1518,
+    "differing": 0
+  }
+}

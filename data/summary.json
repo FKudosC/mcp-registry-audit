@@ -1,0 +1,183 @@
+{
+  "units": 22104,
+  "by_type": {
+    "DECLARATION_COMPLETE": {
+      "INSUFFICIENT": 12835,
+      "UNSUPPORTED": 5335,
+      "PARTIAL": 3198,
+      "SUPPORTED": 623,
+      "UNRESOLVED": 113
+    },
+    "DECLARATION_SOUND": {
+      "INSUFFICIENT": 18058,
+      "SUPPORTED": 2311,
+      "PARTIAL": 1510,
+      "UNSUPPORTED": 112,
+      "UNRESOLVED": 113
+    },
+    "VERSION_PIN": {
+      "STALE": 4140,
+      "SUPPORTED": 7708,
+      "INSUFFICIENT": 301
+    }
+  },
+  "by_type_reason": {
+    "DECLARATION_COMPLETE": {
+      "INSUFFICIENT|CODE_GONE": 1015,
+      "UNSUPPORTED|UNDECLARED_CAPABILITY": 5335,
+      "PARTIAL|DECLARATION_SUBSET": 3198,
+      "INSUFFICIENT|NO_DECLARATION": 912,
+      "INSUFFICIENT|NO_DECLARING_CHANNEL": 741,
+      "INSUFFICIENT|CODE_OPAQUE": 2964,
+      "INSUFFICIENT|CHANNEL_ABSENT": 5993,
+      "INSUFFICIENT|CODE_UNAVAILABLE": 1210,
+      "SUPPORTED|FULL_MATCH": 623,
+      "UNRESOLVED|IDENTITY_AMBIGUOUS": 113
+    },
+    "DECLARATION_SOUND": {
+      "INSUFFICIENT|CODE_GONE": 1015,
+      "INSUFFICIENT|NO_DECLARATION": 13858,
+      "SUPPORTED|FULL_MATCH": 2311,
+      "INSUFFICIENT|CODE_OPAQUE": 1975,
+      "PARTIAL|GHOST_DECLARATION": 1510,
+      "INSUFFICIENT|CODE_UNAVAILABLE": 1210,
+      "UNSUPPORTED|GHOST_DECLARATION": 112,
+      "UNRESOLVED|IDENTITY_AMBIGUOUS": 113
+    },
+    "VERSION_PIN": {
+      "STALE|UNPINNED_VERSION": 4140,
+      "SUPPORTED|FULL_MATCH": 7708,
+      "INSUFFICIENT|CODE_GONE": 301
+    }
+  },
+  "totals": {
+    "n_detected": 57076,
+    "n_omitted": 51672,
+    "n_schema": 26023,
+    "n_artefact": 11833,
+    "n_behavioural": 13816
+  },
+  "shares": {
+    "schema_share": 0.5036189812664499,
+    "artefact_share": 0.22900216751819166,
+    "behavioural_share": 0.2673788512153584,
+    "S_schema": 0.5036189812664499,
+    "S_structural": 0.7326211487846416
+  },
+  "unit_weighted": {
+    "no_omission": 5724,
+    "mixed": 6221,
+    "fully_structural": 7834,
+    "fully_behavioural": 2325
+  },
+  "record_verdict": {
+    "INSUFFICIENT": 12835,
+    "UNSUPPORTED": 5335,
+    "PARTIAL": 3198,
+    "SUPPORTED": 623,
+    "UNRESOLVED": 113
+  },
+  "record_currency": {
+    "UNKNOWN": 10256,
+    "STALE": 4140,
+    "FRESH": 7708
+  },
+  "e1b": {
+    "table": [
+      {
+        "source": "glama",
+        "n": 14531,
+        "naive": 0.8385405913793499,
+        "stratified": 0.8474481241841794,
+        "n_strata": 6,
+        "dev": 0.02690651340932848,
+        "band": "within"
+      },
+      {
+        "source": "official",
+        "n": 9785,
+        "naive": 0.5515925736671776,
+        "stratified": 0.6063342032667024,
+        "n_strata": 6,
+        "dev": -0.21420740750814848,
+        "band": "below"
+      },
+      {
+        "source": "mcpso",
+        "n": 6855,
+        "naive": 0.9251884269389741,
+        "stratified": 0.8397101227013789,
+        "n_strata": 6,
+        "dev": 0.01916851192652802,
+        "band": "within"
+      },
+      {
+        "source": "aibase",
+        "n": 2747,
+        "naive": 0.982951098167698,
+        "stratified": 0.8167476076373679,
+        "n_strata": 6,
+        "dev": -0.003794003137483015,
+        "band": "within"
+      },
+      {
+        "source": "cursor",
+        "n": 1254,
+        "naive": 0.9262360446570973,
+        "stratified": 0.8205416107748509,
+        "n_strata": 6,
+        "dev": 0.0,
+        "band": "within"
+      },
+      {
+        "source": "smithery",
+        "n": 291,
+        "naive": 0.6111111111111112,
+        "stratified": 0.558610466268808,
+        "n_strata": 6,
+        "dev": -0.26193114450604293,
+        "band": "below"
+      },
+      {
+        "source": "modelscope",
+        "n": 153,
+        "naive": 0.9705882352941176,
+        "stratified": 0.9003266909785534,
+        "n_strata": 6,
+        "dev": 0.07978508020370256,
+        "band": "above"
+      }
+    ],
+    "naive_range": [
+      0.5515925736671776,
+      0.982951098167698
+    ],
+    "stratified_range": [
+      0.558610466268808,
+      0.9003266909785534
+    ],
+    "median": 0.8205416107748509,
+    "strata": 6
+  },
+  "sensitivity_refute": {
+    "DECLARATION_COMPLETE": {
+      "INSUFFICIENT": 6842,
+      "UNSUPPORTED": 11328,
+      "PARTIAL": 3198,
+      "SUPPORTED": 623,
+      "UNRESOLVED": 113
+    },
+    "DECLARATION_SOUND": {
+      "INSUFFICIENT": 18058,
+      "SUPPORTED": 2311,
+      "PARTIAL": 1510,
+      "UNSUPPORTED": 112,
+      "UNRESOLVED": 113
+    },
+    "VERSION_PIN": {
+      "STALE": 4140,
+      "SUPPORTED": 7708,
+      "INSUFFICIENT": 301
+    }
+  }
+}

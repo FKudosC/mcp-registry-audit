@@ -1,55 +1,74 @@
-﻿# Cross-source consistency auditing of seven MCP registries
+﻿# Assertion without establishment
 
 [![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.23833260.svg)](https://doi.org/10.5281/zenodo.23833260)
-Code and aggregate data for the paper:
 
-> **What Model Context Protocol registry records establish: a cross-source audit of seven public registries**
-> Kecai Fan, Jialiang Peng — Heilongjiang University, Harbin, China.
+Code and data for the paper:
+
+> **Assertion without establishment: a cross-source evidence audit (CSEA) of Model Context Protocol registry records**
+> Kecai Fan, Jialiang Peng 鈥?Heilongjiang University, Harbin, China.
 > Submitted to *Computers & Security* (2026).
 >
 > Repository: https://github.com/FKudosC/mcp-registry-audit
 
-## What this repository contains
+## What this release contains
 
 | Path | Contents |
 |---|---|
 | `code/mcp_audit/` | Crawler, registry adapters, manifest parser, nine static detectors, alignment and divergence analysis, drift and re-ingestion checks, annotation tooling |
-| `data/derived_tables/` | The aggregate tables behind every number printed in the paper (24 CSV files) |
+| `code/csea/` | The audit itself: `dispatch.py` (verdicts and evidence), `ablation.py`, `analyze_answers.py`, `invariants.py`, `build_v8.py`, and the two reproduction scripts for the drift and install-path figures |
+| `code/figures/` | R scripts behind Figures 1 to 7, including `make_figures.R`, `make_framework_fig.R` and `make_drift_fig.R` |
+| `data/` | Aggregate outputs: `summary.json`, `ablation.json`, `validation.json`, `invariants.json`, the readability companions `summary.md`, `ablation.md` and `invariants.md`, and the two supplement data files |
+| `data/derived_tables/` | The 24 aggregate tables behind every number printed in the paper |
+| `data/d_kappa.csv` | Pairwise agreement in the first annotation round, the source of Table S15 |
 | `docs/DATA.md` | Column-by-column description of each aggregate table |
-| `docs/SCOPE.md` | What is deliberately **not** in this repository, and why |
+| `docs/SCOPE.md` | What is deliberately **not** in this release, and why |
+| `CHECKSUMS.sha256` | SHA-256 of every file in this release |
 
-## Withheld analysis assets
 
-Two further items are withheld because they name real repositories or owners, which the paper does not print: `case_studies.py`, the script that assembles the four case studies, and the internal per-table working notes. The aggregate counterparts remain in `data/derived_tables/`.
+## What is withheld
 
-## What this repository does not contain
+Three classes of material are not part of this release. `docs/SCOPE.md` states the boundary and the route to them.
 
-The analysis depends on three artefacts that cannot be redistributed:
+1. **Raw crawl snapshots** of the seven registries across eight fetch days.
+2. **Cloned repository contents**, 86,983 unexecuted depth-1 clones.
+3. **Per-unit records** that carry a normalised repository URL, together with the label-to-account mapping for the ten largest owners.
 
-1. **Raw crawl snapshots** of the seven registries, eight fetch days. They contain third-party content under the registries' own terms.
-2. **Cloned repository contents** (86,983 unexecuted depth-1 clones). These are third-party source code under their own licences.
-3. **Per-unit records** carrying repository URLs, and the label-to-account mapping for the ten largest owners. Publishing these would attach adverse counts to identifiable accounts, which the paper states it does not do.
-
-These are held in a restricted deposit and are available to the editor and the reviewers through the journal editorial office. `docs/SCOPE.md` states the exact boundary.
+None of the three is part of this release. They remain in a restricted deposit described in `docs/SCOPE.md`, and the aggregate tables reproduce every printed number without them.
 
 ## Reproducing the analysis
 
-Python 3.11 or later.
+Python 3.11 or later, and R 4.6 for the figures.
 
 ```bash
 python -m venv .venv
 source .venv/bin/activate        # Windows: .venv\Scripts\activate
 pip install -r requirements.txt
-playwright install chromium      # needed only for the JavaScript-rendered registries
+playwright install chromium      # only for the JavaScript-rendered registries
 ```
 
-Full reproduction starts from a fresh crawl and therefore needs network access to the seven registries; the derived tables in `data/derived_tables/` reproduce every printed figure and statistic without re-crawling. The crawl is read-only: no repository code, install script or manifest hook is executed at any point, and no MCP server process is started.
+The eleven commands of the paper's reproducibility section run in this order.
+
+```bash
+python -m mcp_audit c1-reclone                        # needs network
+python mcp_audit/csea/dispatch.py
+python mcp_audit/csea/ablation.py
+python mcp_audit/csea/analyze_answers.py
+python mcp_audit/csea/invariants.py                   # must exit 0
+python paper/csea/out/repro_new_numbers.py --db <corpus>
+python paper/csea/out/repro_install_path.py
+python paper/csea/out/export_drift_fig_data.py --db <corpus>
+Rscript paper/csea/figures/make_figures.R
+Rscript paper/csea/figures/make_framework_fig.R
+Rscript paper/csea/figures/make_drift_fig.R
+```
+
+The crawl is read-only. No repository code, install script or manifest hook is executed at any point, and no MCP server process is started.
 
 ## Citation
 
 If you use this code or these tables, please cite the archived release:
 
-> Fan K, Peng J. Cross-source consistency auditing of seven MCP registries. Zenodo; 2026.
+> Fan K, Peng J. Assertion without establishment: a cross-source evidence audit of Model Context Protocol registry records. Zenodo; 2026.
 > doi:10.5281/zenodo.23833260 (version V1.0.0; concept DOI 10.5281/zenodo.23833259)
 
 ## Licence
@@ -58,7 +77,5 @@ Code and aggregate data: MIT (see `LICENSE`). The third-party content described 
 
 ## Contact
 
-Jialiang Peng — pengjialiang@hlju.edu.cn
-
-
+Jialiang Peng 鈥?pengjialiang@hlju.edu.cn
 
